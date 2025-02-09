@@ -79,7 +79,7 @@ export const createTitleSubTextSlide = (slide, slideContent) => {
 
 export const replaceTextShapeWithImage = async (slide, imagePrompt) => {
   try {  
-    const response = UrlFetchApp.fetch("https://9d90-1-52-111-59.ngrok-free.app/api/v1/ai-slide/image", {
+    const response = UrlFetchApp.fetch("https://possible-crack-thrush.ngrok-free.app/api/v1/ai-slide/image", {
       method: "post",
       payload: JSON.stringify({ prompt: imagePrompt }),
       contentType: "application/json",
@@ -227,4 +227,9 @@ export const evaluateSlide = async () => {
   return analysis;
 }
 
-
+export const insertNotesToSlide = (position, notes) => {
+  const presentation = SlidesApp.getActivePresentation();
+  const slide = presentation.getSlides()[position];
+  const speakerNotesShape = slide.getNotesPage().getSpeakerNotesShape();
+  speakerNotesShape.getText().setText(notes);
+}

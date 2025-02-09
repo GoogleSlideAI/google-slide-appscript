@@ -44,7 +44,7 @@ export const deleteSlide = (slideIndex) => {
 export const generatePresentation = async (outlineContent, themeId) => {
   console.log('Generating presentation...');
   try {
-    const response = UrlFetchApp.fetch("https://9d90-1-52-111-59.ngrok-free.app/api/v1/ai-presentation/content", {
+    const response = UrlFetchApp.fetch("https://possible-crack-thrush.ngrok-free.app/api/v1/ai-presentation/content", {
       method: "post",
       payload: JSON.stringify({
         outline: outlineContent
@@ -116,6 +116,49 @@ export const copyAllSlidesTemplate = (presentationId) => {
   const slides = sourceDeck.getSlides();
   
   return slides;
+}
+
+const getAllTextFromTargetSlide = (slide) => {
+  const pageElements = slide.getPageElements();
+  let collectedText = [];
+  collectedText.push("This is the content of this slide:");
+
+  pageElements.forEach(function (element) {
+    if(element.getPageElementType() === SlidesApp.PageElementType.SHAPE) {
+      const shape = element.asShape();
+      const textRange = shape.getText();
+      if (textRange) {
+        const text = textRange.asString().trim();
+        if (text !== "") {
+          collectedText.push(text);
+        }
+      }
+    }
+  });
+
+  const speakerNotesShape = slide.getNotesPage().getSpeakerNotesShape();
+  if(speakerNotesShape) {
+    const notesText = speakerNotesShape.getText().asString();
+    if(notesText.trim() !== "") {
+      collectedText.push("\nSpeaker Notes:\n" + notesText);
+    }
+  }
+
+  const allText = collectedText.join("\n");
+  return allText;
+}
+
+export const getAllTextFromPresentation = () => {
+  const slides = SlidesApp.getActivePresentation().getSlides();
+  let collectedText = [];
+  
+  for(let i = 0; i < slides.length; i++) {
+    collectedText.push(`\n=== Content of Slide ${i + 1} ===\n`);
+    collectedText.push(getAllTextFromTargetSlide(slides[i]));
+  }
+  
+  const presentationContent = collectedText.join("\n");
+  return presentationContent;
 }
 
 export const deleteDuplicateSourceTheme = (slides) => {

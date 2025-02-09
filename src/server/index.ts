@@ -1,6 +1,6 @@
 import { onOpen, openDialog, openSidebar } from "./ui";
 
-import { getSlidesData, addSlide, deleteSlide, generatePresentation, setActiveSlide } from "./slides";
+import { getSlidesData, addSlide, deleteSlide, generatePresentation, setActiveSlide, getAllTextFromPresentation } from "./slides";
 import { createSlide, evaluateSlide, getAllTextFromActiveSlide } from "./slide";
 
 export {
@@ -12,6 +12,7 @@ export {
   deleteSlide,
   createSlide,
   getAllTextFromActiveSlide,
+  getAllTextFromPresentation,
   generatePresentation,
   setActiveSlide,
   evaluateSlide,
