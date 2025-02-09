@@ -1,5 +1,5 @@
 import axiosInstance from "../lib/axios";
-import { AiPresentationOutlinePayload, AiPresentationContentPayload } from "./types/presentation";
+import { AiPresentationOutlinePayload, AiPresentationContentPayload, SummarizePresentationPayload } from "./types/presentation";
 
 export const callAiPresentationOutline = async (payload:AiPresentationOutlinePayload) => {
     const response = await axiosInstance.post('/ai-presentation/outline', payload);
@@ -10,3 +10,9 @@ export const callAiPresentationContent = async (payload:AiPresentationContentPay
     const response = await axiosInstance.post('/ai-presentation/content', payload);
     return response.data;
 }
+
+export const callAiPresentationSummarize = async (payload: SummarizePresentationPayload) => {
+    const response = await axiosInstance.post('/ai-presentation/summarize', payload);
+    return response.data;
+}
+

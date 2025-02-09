@@ -14,7 +14,7 @@ const Content = () => {
   return (
     <div className="h-full">
       <SidebarHeader value={screen} onValueChange={setScreen} />
-      <div className="overflow-x-hidden">{content}</div>
+      <div className="h-full overflow-x-hidden">{content}</div>
     </div>
   );
 };

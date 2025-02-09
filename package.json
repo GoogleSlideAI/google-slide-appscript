@@ -50,6 +50,7 @@
     "formik": "^2.4.6",
     "framer-motion": "^11.18.0",
     "gas-client": "^1.1.1",
+    "hast-util-to-text": "^4.0.2",
     "lucide-react": "^0.470.0",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
@@ -59,6 +60,10 @@
     "react-markdown": "^9.0.3",
     "react-router-dom": "^7.1.1",
     "react-transition-group": "^4.4.2",
+    "rehype-highlight": "^7.0.2",
+    "remark": "^15.0.1",
+    "remark-gfm": "^4.0.0",
+    "strip-markdown": "^6.0.0",
     "yup": "^1.6.1",
     "zustand": "^5.0.3"
   },

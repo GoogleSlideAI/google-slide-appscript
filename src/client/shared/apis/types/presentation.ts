@@ -19,3 +19,7 @@ export type AiPresentationOutlinePayload = {
 export type AiPresentationContentPayload = {
   outline:string;
 }
+
+export type SummarizePresentationPayload = {
+  content: string;
+};

@@ -1,49 +1,24 @@
 import { useState } from 'react';
-import { Box, Button, Paper, Typography } from "@mui/material";
+import { Box, Button, Paper, MenuItem, IconButton, Menu } from "@mui/material";
 import { useServerFunction } from "../../../shared/hooks/useServerFunction";
 import { useToast } from "../../../shared/contexts/ToastContext";
 import LoadingSpinner from "../../../shared/components/loading-spinner";
-import ReactMarkdown from 'react-markdown';
 import { serverFunctions } from '../../../utils/serverFunctions';
-import { Components } from 'react-markdown';
+import Markdown from '../../../shared/components/markdown';
+import { BUTTON_TOOL_CONTENT, ButtonToolContent } from './const';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import { callAiPresentationSummarize } from '../../../shared/apis/ai-presentation';
+import CopyButton from '../../../shared/components/copy-button';
 
 const EvaluateSlideScreen = () => {
   const { isLoading, execute } = useServerFunction<any>();
   const { showSuccess, showError } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [evaluationResult, setEvaluationResult] = useState<string | null>(null);
+  const [buttonToolContent, setButtonToolContent] = useState<string>(ButtonToolContent.EVALUATE_SLIDE);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
 
-  const markdownComponents: Components = {
-    b: ({children}) => (
-      <Typography 
-        component="div" 
-        variant="h6" 
-        sx={{ 
-          fontWeight: 600,
-          color: '#1e293b',
-          mt: 2,
-          mb: 1
-        }}
-      >
-        {children}
-      </Typography>
-    ),
-    i: ({children}) => (
-      <Typography 
-        component="div" 
-        variant="body2" 
-        sx={{ 
-          color: '#64748b',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 1
-        }}
-      >
-        {children}
-      </Typography>
-    ),
-    br: () => <Box sx={{ height: '8px' }} />,
-  };
 
   const evaluateData = async () => {
     setIsGenerating(true);
@@ -60,10 +35,50 @@ const EvaluateSlideScreen = () => {
     }
   }
 
+  const summarizePresentation = async () => {
+    setIsGenerating(true);
+    try {
+      const presentationContent = await execute(() => serverFunctions.getAllTextFromPresentation());
+
+      const summarizedContent = await callAiPresentationSummarize({
+        content: presentationContent
+      });
+
+      setEvaluationResult(summarizedContent.summary);
+      showSuccess('Summarization completed!');
+    } catch (error) {
+      console.error("Error details:", error);
+      showError('Failed to summarize presentation!');
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
   const formatOutput = (str: string) => {
   return str
     .replace(/#+\s+(.*)/g, '### $1\n')
     .replace(/Score:\s*(\d+)/g, '*Score:* **$1**\n');
+  }
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleMenuItemClick = (content: string) => {
+    setButtonToolContent(content);
+    handleClose();
+  };
+
+  const onClick = () => {
+    if (buttonToolContent === ButtonToolContent.SUMMARIZE_PRESENTATION) {
+      summarizePresentation();
+    } else {
+      evaluateData();
+    }
   }
 
   return (
@@ -109,9 +124,10 @@ const EvaluateSlideScreen = () => {
                   }
                 }}
               >
-                <ReactMarkdown components={markdownComponents}>
+                <Markdown>
                   {evaluationResult}
-                </ReactMarkdown>
+                </Markdown>
+                <CopyButton text={evaluationResult} />
               </Paper>
             </Box>
           )}
@@ -125,10 +141,53 @@ const EvaluateSlideScreen = () => {
           padding: '16px',
           backgroundColor: '#FAF8F6',
           borderTop: '1px solid rgba(0,0,0,0.1)',
-          zIndex: 10
+          zIndex: 10,
+          display: 'flex',
+          gap: 2,
+          alignItems: 'center'
         }}>
+          <>
+            <IconButton
+              onClick={handleClick}
+              size="small"
+              sx={{
+                bgcolor: 'white',
+                border: '1px solid rgba(0,0,0,0.1)',
+                '&:hover': {
+                  bgcolor: 'white',
+                  border: '1px solid rgba(0,0,0,0.2)',
+                },
+              }}
+            >
+              <KeyboardArrowDownIcon />
+            </IconButton>
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              anchorOrigin={{
+                vertical: 'top',
+                horizontal: 'left',
+              }}
+              transformOrigin={{
+                vertical: 'bottom',
+                horizontal: 'left',
+              }}
+            >
+              {BUTTON_TOOL_CONTENT.map((content) => (
+                <MenuItem 
+                  key={content} 
+                  onClick={() => handleMenuItemClick(content)}
+                  selected={content === buttonToolContent}
+                >
+                  {content}
+                </MenuItem>
+              ))}
+            </Menu>
+          </>
+
           <Button
-            onClick={evaluateData}
+            onClick={onClick}
             variant="contained"
             fullWidth
             disabled={isGenerating || isLoading}
@@ -142,7 +201,7 @@ const EvaluateSlideScreen = () => {
               }
             }}
           >
-            {(isGenerating || isLoading) ? "Evaluating..." : "Evaluate Slide"}
+            {(isGenerating || isLoading) ? "Processing..." : buttonToolContent}
           </Button>
         </Box>
       </Paper>
