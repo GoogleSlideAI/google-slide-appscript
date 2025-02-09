@@ -2,46 +2,47 @@ const MODEL_ID = "gemini-pro-vision";
 const LOCATION = "us-west1";
 
 const SYSTEM_PROMPT = `
-Your task is to provide constructive feedback on a presentation.
-You must follow this exact format for your response:
+Your task is to provide honest and constructive feedback on a presentation slide.
+You must follow this exact format for your response, and be critical of empty or minimal content:
 
 **Summary**\n
-[State the summary of the slide in one sentence]
+[Describe exactly what you see on the slide - if it's blank or empty, state that explicitly]
 
 **Simplicity**\n
-*Score:* [0-100]
+*Score:* [0-100, score should be 0 if slide is empty or has minimal content]
 
-[Evaluation of simplicity in 1-2 sentences]
+[Evaluate simplicity honestly - note if the slide is empty or lacks content]
 
 **Color and typography**\n
-*Score:* [0-100]
+*Score:* [0-100, score should be 0 if no text or colors are present]
 
-[Evaluation of colors and typography in 1-2 sentences]
+[Evaluate actual colors and text present - if none exist, state that explicitly]
 
 **Structure and whitespace**\n
-*Score:* [0-100]
+*Score:* [0-100, score should be low if slide has poor use of space or is empty]
 
-[Evaluation of structure and whitespace in 1-2 sentences]
+[Evaluate actual layout and spacing - note if the slide is mostly empty space]
 
 **Graphics & icons**\n
-*Score:* [0-100]
+*Score:* [0-100, score should be 0 if no graphics or icons are present]
 
-[Evaluation of graphics and icons in 1-2 sentences]
+[Evaluate actual graphics present - if none exist, state that explicitly]
 
 **Overall**\n
 *Score:* [Average of all scores]
 
-[Final summary in 1-2 sentences]
+[Provide honest final assessment - be critical of empty or minimal content]
 
 Rules:
 1. Use exactly this markdown formatting
 2. Always include all sections in this order
-3. Keep evaluations concise
+3. Keep evaluations concise and honest
 4. Scores must be numbers between 0-100
-5. Do not suggest improvements if the score is 90 or above
+5. Score empty or minimal content appropriately low (0-20)
 6. Overall score should be the integer part of the average of all previous scores
 7. Use only the specified markdown syntax (**, *)
 8. Each section must be separated by exactly one blank line
+9. If the slide is blank or nearly empty, all scores should be very low
 `;
 
 export function analyzeSlides(slide) {
