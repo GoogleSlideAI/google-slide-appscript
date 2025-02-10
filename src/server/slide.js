@@ -1,4 +1,4 @@
-import { analyzeSlides } from "./ai";
+import { analyzeSlides, generateSlideScript } from "./ai";
 
 const getActiveSlideIndex = () => {
   const activePage = SlidesApp.getActivePresentation()
@@ -225,6 +225,49 @@ export const evaluateSlide = async () => {
     notes,
   });
   return analysis;
+}
+
+export const generateSlideScriptContent = async () => {
+  const presentationId = getPresentationId();
+  const pageId = getSelectedPageId();
+  const thumbnail = fetchThumbnail(presentationId, pageId);
+  const notes = fetchSpeakerNotes(presentationId, pageId);
+  const analysis = generateSlideScript({
+
+    thumbnail,
+    notes,
+  });
+  return analysis;
+}
+
+export const addTextToSlide = (inputText) => {
+  try {
+    // Get the active presentation and slide
+    var presentation = SlidesApp.getActivePresentation();
+    var slide = presentation.getSelection().getCurrentPage();
+    
+
+    // Create a text box with the input text
+    var textBox = slide.insertShape(SlidesApp.ShapeType.TEXT_BOX, 100, 100, 300, 100);
+    textBox.getText().setText(inputText);
+    
+    // Style the text
+    var textRange = textBox.getText();
+    textRange.getTextStyle()
+      .setFontSize(14)
+      .setFontFamily('Arial')
+      .setBold(false)
+      .setForegroundColor('#000000'); // Set text color to black
+    
+    // Style the text box
+    
+    Logger.log('Text box added successfully');
+    return textBox;
+    
+  } catch (error) {
+    Logger.log('Error: ' + error.toString());
+    return null;
+  }
 }
 
 export const insertNotesToSlide = (position, notes) => {

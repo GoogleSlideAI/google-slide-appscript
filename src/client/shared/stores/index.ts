@@ -7,13 +7,27 @@ type History = {
   createdAt: string
 }
 
+export type UserInfo = {
+  email: string
+  name: string
+  pictureUrl: string
+  givenName: string
+  familyName: string
+  locale: string
+
+  id: string
+}
+
 type AppState = {
   histories: History[]
   authToken: string
+  userInfo: UserInfo | null
   addHistory: (history: History) => void
   removeHistory: (id: string) => void
   clearHistories: () => void
   setAuthToken: (token: string) => void
+  setUserInfo: (info: UserInfo) => void
+  clearUserInfo: () => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -22,7 +36,17 @@ export const useAppStore = create<AppState>()(
       currentPage: 'home',
       histories: [], // Initialize empty array
       authToken: '',
-      setAuthToken: (token: string) => set({ authToken: token }),
+      userInfo: null, // Initialize user info as null
+
+      // User info actions
+      setUserInfo: (info: UserInfo) => 
+        set({ userInfo: info }),
+      clearUserInfo: () => 
+        set({ userInfo: null }),
+
+      // Existing actions
+      setAuthToken: (token: string) => 
+        set({ authToken: token }),
       addHistory: (history) => 
         set((state) => ({ 
           histories: [...state.histories, history]
@@ -40,3 +64,8 @@ export const useAppStore = create<AppState>()(
     }
   )
 )
+
+// Helper hooks for user info
+export const useUserInfo = () => useAppStore((state) => state.userInfo)
+export const useSetUserInfo = () => useAppStore((state) => state.setUserInfo)
+export const useClearUserInfo = () => useAppStore((state) => state.clearUserInfo)

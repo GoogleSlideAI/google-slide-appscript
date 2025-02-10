@@ -10,7 +10,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { callAiPresentationSummarize } from '../../../shared/apis/ai-presentation';
 import CopyButton from '../../../shared/components/copy-button';
 
-const EvaluateSlideScreen = () => {
+const  OtherToolsScreen = () => {
   const { isLoading, execute } = useServerFunction<any>();
   const { showSuccess, showError } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -29,6 +29,22 @@ const EvaluateSlideScreen = () => {
     } catch (error) {
       console.error("Error details:", error);
       showError('Failed to evaluate slide!');
+      setEvaluationResult(null);
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  const scriptData = async () => {
+    setIsGenerating(true);
+    try {
+      const result = await execute(() => serverFunctions.generateSlideScriptContent());
+
+      setEvaluationResult(formatOutput(result));
+      showSuccess('Evaluation completed!');
+    } catch (error) {
+      console.error("Error details:", error);
+      showError('Failed to generate script!');
       setEvaluationResult(null);
     } finally {
       setIsGenerating(false);
@@ -76,9 +92,12 @@ const EvaluateSlideScreen = () => {
   const onClick = () => {
     if (buttonToolContent === ButtonToolContent.SUMMARIZE_PRESENTATION) {
       summarizePresentation();
+    } else if (buttonToolContent === ButtonToolContent.GENERATE_SCRIPT) {
+      scriptData();
     } else {
       evaluateData();
     }
+
   }
 
   return (
@@ -209,4 +228,4 @@ const EvaluateSlideScreen = () => {
   );
 };
 
-export default EvaluateSlideScreen;
+export default OtherToolsScreen;

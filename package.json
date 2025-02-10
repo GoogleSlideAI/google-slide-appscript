@@ -33,6 +33,7 @@
     "npm": ">=6.0.0"
   },
   "dependencies": {
+    "@chatscope/chat-ui-kit-react": "^2.0.3",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
     "@mui/icons-material": "^6.3.1",

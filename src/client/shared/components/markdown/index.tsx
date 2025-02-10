@@ -50,7 +50,7 @@ const markdownComponents: Components = {
         sx={{ 
           textAlign: 'justify',
           textJustify: 'inter-word',
-          mb: 2,
+          mb: 1,
           color: '#334155'  // Optional: adds a nice slate color for better readability
         }}
       >
