@@ -39,6 +39,7 @@ const  OtherToolsScreen = () => {
     setIsGenerating(true);
     try {
       const result = await execute(() => serverFunctions.generateSlideScriptContent());
+      console.log(result);
 
       setEvaluationResult(formatOutput(result));
       showSuccess('Evaluation completed!');

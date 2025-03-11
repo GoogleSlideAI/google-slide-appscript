@@ -7,17 +7,18 @@ import Markdown from '../../../shared/components/markdown';
 import { serverFunctions } from '../../../utils/serverFunctions';
 import { useServerFunction } from '../../../shared/hooks/useServerFunction';
   
-const systemMessage = { //  Explain things like you're talking to a software professional with 5 years of experience.
-  "role": "system", "content": "Explain things like you're talking to a software professional with 2 years of experience."
+const systemMessage = {
+  "role": "system",
+  "content": "You are a concise slide content assistant. Keep all responses under 100 characters. Be clear and impactful. Avoid unnecessary words. Focus on key points that work well on slides."
 }
 
 
 const ChatBotScreen = () => {
-  const { isLoading,execute } = useServerFunction();
+  const { isLoading, execute } = useServerFunction();
 
   const [messages, setMessages] = useState([
     {
-      message: "Hello, I'm Jarvis! Ask me anything!",
+      message: "Hi! I'll help create concise slide content. What would you like to add?",
       sentTime: "just now",
       sender: "ChatGPT"
     }
@@ -32,29 +33,19 @@ const ChatBotScreen = () => {
     };
 
     const newMessages = [...messages, newMessage];
-    
-    setMessages (newMessages as any);
-
+    setMessages(newMessages as any);
     setIsTyping(true);
     await processMessageToChatGPT(newMessages);
   };
 
   const onAddTextToSlide = async (message: string) => {
-     await execute(() => serverFunctions.addTextToSlide(message));
+    await execute(() => serverFunctions.addTextToSlide(message));
   }
 
-
   async function processMessageToChatGPT(chatMessages: any) {
-
     let apiMessages = chatMessages.map((messageObject: any) => {
-      let role = "";
-      if (messageObject.sender === "ChatGPT") {
-
-        role = "assistant";
-      } else {
-        role = "user";
-      }
-      return { role: role, content: messageObject.message}
+      let role = messageObject.sender === "ChatGPT" ? "assistant" : "user";
+      return { role: role, content: messageObject.message }
     });
 
     const apiRequestBody = {
@@ -62,28 +53,46 @@ const ChatBotScreen = () => {
       "messages": [
         systemMessage,
         ...apiMessages
-      ]
+      ],
+      "max_tokens": 50  // Limiting token count for shorter responses
     }
 
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(apiRequestBody)
+      });
 
-    await fetch("https://api.openai.com/v1/chat/completions", 
-    {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + KEY,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(apiRequestBody)
-    }).then((data) => {
-      return data.json();
-    }).then((data) => {
-      console.log(data);
+      const data = await response.json();
+      
+      if (!data.choices || !data.choices[0]?.message?.content) {
+        throw new Error('Invalid response from API');
+      }
+
+      let content = data.choices[0].message.content;
+      
+      // Ensure response is not longer than 100 characters
+      if (content.length > 100) {
+        content = content.substring(0, 97) + "...";
+      }
+
       setMessages([...chatMessages, {
-        message: data.choices[0].message.content,
+        message: content,
         sender: "ChatGPT"
       }]);
+    } catch (error) {
+      console.error('Error processing message:', error);
+      setMessages([...chatMessages, {
+        message: "Sorry, I couldn't process that request. Please try again with a simpler query.",
+        sender: "ChatGPT"
+      }]);
+    } finally {
       setIsTyping(false);
-    });
+    }
   }
 
   return (

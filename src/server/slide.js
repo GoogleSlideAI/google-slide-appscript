@@ -57,7 +57,7 @@ export const createLeftImageSlide = async (slide, slideContent) => {
     slide.replaceAllText("<<left-image-text_title>>", slideContent['title'])
     slide.replaceAllText("<<left-image-text_body>>", slideContent['body'])
     slide.getNotesPage().getSpeakerNotesShape().getText().setText(slideContent['speak-notes'])
-    await replaceTextShapeWithImage(slide, slideContent['image_prompt'])
+    await replaceTextShapeWithImageByGoogleSearchAPI(slide, slideContent['image_prompt'])
     return slide
 }
 
@@ -65,7 +65,7 @@ export const createRightImageSlide = async (slide, slideContent) => {
     slide.replaceAllText("<<right-image-text_title>>", slideContent['title'])
     slide.replaceAllText("<<right-image-text_body>>", slideContent['body'])
     slide.getNotesPage().getSpeakerNotesShape().getText().setText(slideContent['speak-notes'])
-    await replaceTextShapeWithImage(slide, slideContent['image_prompt'])
+    await replaceTextShapeWithImageByGoogleSearchAPI(slide, slideContent['image_prompt'])
     return slide
 }
 
@@ -97,6 +97,112 @@ export const replaceTextShapeWithImage = async (slide, imagePrompt) => {
   } catch (error) {
     console.error('Error replacing image:', error);
     throw new Error(`Failed to replace image: ${error.toString()}`);
+  }
+}
+
+export const replaceTextShapeWithImageByGoogleSearchAPI = async (slide, imagePrompt) => {
+  try {
+    const API_KEY = 'AIzaSyD49pPC-cG6wBGPeUoi9Ug4u49DEV-fsc8';
+    const SEARCH_ENGINE_ID = 'b500797e3ece94983';
+    
+    // Validate inputs
+    if (!imagePrompt) {
+      throw new Error('Image prompt is required');
+    }
+
+    // Construct search URL with additional parameters for better image results
+    const searchUrl = `https://customsearch.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${SEARCH_ENGINE_ID}&q=${encodeURIComponent(imagePrompt)}&searchType=image&num=10&safe=active&imgSize=large&imgType=photo&fileType=jpg,png&rights=cc_publicdomain,cc_attribute,cc_sharealike`;
+
+    // Make the API request
+    const response = UrlFetchApp.fetch(searchUrl, {
+      method: "get",
+      muteHttpExceptions: true,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    // Check response status
+    const responseCode = response.getResponseCode();
+    if (responseCode !== 200) {
+      throw new Error(`Google Search API returned error code: ${responseCode}`);
+    }
+
+    const searchResult = JSON.parse(response.getContentText());
+    
+    // Validate search results
+    if (!searchResult.items || searchResult.items.length === 0) {
+      throw new Error('No image results found for the given prompt');
+    }
+
+    // Try each image URL until we find one that works
+    let validImageUrl = null;
+    let lastError = null;
+
+    for (const item of searchResult.items) {
+      try {
+        const imageUrl = item.link;
+        
+        // Skip invalid URLs
+        if (!imageUrl || !imageUrl.match(/^https?:\/\/.+/)) {
+          continue;
+        }
+
+        // Skip URLs with potentially problematic extensions
+        if (imageUrl.match(/\.(webp|svg|gif|ico)$/i)) {
+          continue;
+        }
+
+        // Validate image accessibility
+        const imageResponse = UrlFetchApp.fetch(imageUrl, {
+          method: "get",
+          muteHttpExceptions: true,
+          validateHttpsCertificates: true,
+          followRedirects: true
+        });
+
+        const imageResponseCode = imageResponse.getResponseCode();
+        const contentType = imageResponse.getHeaders()['Content-Type'];
+
+        // Verify it's an image and accessible
+        if (imageResponseCode === 200 && contentType && contentType.toLowerCase().startsWith('image/')) {
+          validImageUrl = imageUrl;
+          break;
+        }
+      } catch (error) {
+        lastError = error;
+        continue;
+      }
+    }
+
+    if (!validImageUrl) {
+      throw new Error('No valid and accessible images found. Last error: ' + (lastError ? lastError.toString() : 'Unknown error'));
+    }
+
+    // Replace images in shapes
+    let imageReplaced = false;
+    slide.getShapes().forEach(shape => {
+      if(shape.getText().asString().trim() === "<<left-image-text_image>>" || 
+         shape.getText().asString().trim() === "<<right-image-text_image>>") {
+        try {
+          shape.replaceWithImage(validImageUrl);
+          imageReplaced = true;
+        } catch (replaceError) {
+          console.error('Error replacing shape with image:', replaceError);
+          throw new Error(`Failed to replace shape with image: ${replaceError.toString()}`);
+        }
+      }
+    });
+
+    if (!imageReplaced) {
+      throw new Error('No matching shapes found to replace with image');
+    }
+
+    return validImageUrl;
+
+  } catch (error) {
+    console.error('Error in replaceTextShapeWithImageByGoogleSearchAPI:', error);
+    throw new Error(`Failed to process image replacement: ${error.toString()}`);
   }
 }
 
@@ -230,6 +336,7 @@ export const evaluateSlide = async () => {
 export const generateSlideScriptContent = async () => {
   const presentationId = getPresentationId();
   const pageId = getSelectedPageId();
+  console.log(presentationId, pageId);
   const thumbnail = fetchThumbnail(presentationId, pageId);
   const notes = fetchSpeakerNotes(presentationId, pageId);
   const analysis = generateSlideScript({
